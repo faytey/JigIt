@@ -1,0 +1,24 @@
+[package]
+cairo-version = "=2.6.3"
+name = "dojo_starter"
+version = "0.1.0"
+
+[cairo]
+sierra-replace-ids = true
+
+[scripts]
+migrate = "sozo build && sozo migrate apply"
+spawn = "./scripts/spawn.sh"
+move = "./scripts/move.sh"
+
+[dependencies]
+dojo = { git = "https://github.com/dojoengine/dojo", tag = "v0.7.4" }
+
+[[target.dojo]]
+
+[tool.dojo.env]
+rpc_url = "http://localhost:5050/"
+account_address = "0xb3ff441a68610b30fd5e2abbf3a1548eb6ba6f3559f2862bf2dc757e5828ca"
+private_key = "0x2bbf4f9fd0bbb2e60b0316c1fe0b76cf7a4d0198bd493ced9b8df2a3a24d68a"
+# The world address must be updated once you've migrated your world.
+world_address = "0xb4079627ebab1cd3cf9fd075dda1ad2454a7a448bf659591f259efa2519b18"

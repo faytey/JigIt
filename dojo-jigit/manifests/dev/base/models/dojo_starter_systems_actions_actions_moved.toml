@@ -1,0 +1,15 @@
+kind = "DojoModel"
+class_hash = "0x45fc1c2d4b2e654f128929c123162feab952f9b3aaaa0f47c616a934856d396"
+original_class_hash = "0x45fc1c2d4b2e654f128929c123162feab952f9b3aaaa0f47c616a934856d396"
+abi = "manifests/dev/abis/base/models/dojo_starter_systems_actions_actions_moved.json"
+name = "dojo_starter::systems::actions::actions::moved"
+
+[[members]]
+name = "player"
+type = "ContractAddress"
+key = true
+
+[[members]]
+name = "direction"
+type = "Direction"
+key = false
