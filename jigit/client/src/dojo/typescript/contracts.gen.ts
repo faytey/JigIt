@@ -23,7 +23,7 @@ export async function setupWorld(provider: DojoProvider) {
             entrypoint: "spawn",
             calldata: [],
           },
-          "dojo_jigit"
+          "dojo_starter"
         );
       } catch (error) {
         console.error("Error executing spawn:", error);
@@ -48,7 +48,7 @@ export async function setupWorld(provider: DojoProvider) {
               ),
             ],
           },
-          "dojo_jigit"
+          "dojo_starter"
         );
       } catch (error) {
         console.error("Error executing spawn:", error);
@@ -66,7 +66,7 @@ export async function setupWorld(provider: DojoProvider) {
             entrypoint: "world",
             calldata: [],
           },
-          "dojo_jigit"
+          "dojo_starter"
         );
       } catch (error) {
         console.error("Error executing spawn:", error);

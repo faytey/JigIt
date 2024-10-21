@@ -1,13 +1,12 @@
 import "./App.css";
 
 import { useEffect, useState } from "react";
-import { useComponentValue } from "@dojoengine/react";
+import { useComponentValue, useQuerySync } from "@dojoengine/react";
 import { Entity } from "@dojoengine/recs";
 import { getEntityIdFromKeys } from "@dojoengine/utils";
 
 import { Direction } from "./dojo/typescript/models.gen";
 import { useDojo } from "./dojo/useDojo";
-import { getSyncEntities } from "@dojoengine/state";
 
 enum DirectionEnum {
   None = "0",
@@ -28,7 +27,7 @@ function App() {
     account,
   } = useDojo();
 
-  getSyncEntities(toriiClient, contractComponents as any, []);
+  useQuerySync(toriiClient, contractComponents as any, []);
 
   const [clipboardStatus, setClipboardStatus] = useState({
     message: "",

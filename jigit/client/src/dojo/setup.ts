@@ -1,6 +1,6 @@
 import { DojoConfig, DojoProvider } from "@dojoengine/core";
 import { BurnerManager } from "@dojoengine/create-burner";
-import { getSyncEntities } from "@dojoengine/state";
+import { getSyncEvents } from "@dojoengine/state";
 import * as torii from "@dojoengine/torii-client";
 import { Account, ArraySignatureType } from "starknet";
 
@@ -14,7 +14,7 @@ export type SetupResult = Awaited<ReturnType<typeof setup>>;
 
 export async function setup({ ...config }: DojoConfig) {
   // torii client
-  const toriiClient = await torii.createClient([], {
+  const toriiClient = await torii.createClient({
     rpcUrl: config.rpcUrl,
     toriiUrl: config.toriiUrl,
     relayUrl: "",
@@ -30,7 +30,12 @@ export async function setup({ ...config }: DojoConfig) {
   // create dojo provider
   const dojoProvider = new DojoProvider(config.manifest, config.rpcUrl);
 
-  const eventSync = getSyncEntities(toriiClient, contractComponents as any, []);
+  const eventSync = getSyncEvents(
+    toriiClient,
+    contractComponents as any,
+    undefined,
+    []
+  );
 
   // setup world
   const client = await setupWorld(dojoProvider);
@@ -63,7 +68,7 @@ export async function setup({ ...config }: DojoConfig) {
     clientComponents,
     contractComponents,
     systemCalls: createSystemCalls({ client }, clientComponents, world),
-    publish: (typedData: string, signature: torii.JsSignature) => {
+    publish: (typedData: string, signature: ArraySignatureType) => {
       toriiClient.publishMessage(typedData, signature);
     },
     config,
