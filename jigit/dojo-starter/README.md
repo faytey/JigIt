@@ -1,3 +1,5 @@
+![Dojo Starter](./assets/cover.png)
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset=".github/mark-dark.svg">
   <img alt="Dojo logo" align="right" width="120" src=".github/mark-light.svg">
@@ -18,9 +20,9 @@
 
 # Dojo Starter: Official Guide
 
-The official Dojo Starter guide, the quickest and most streamlined way to get your Dojo provable game up and running. This guide will assist you with the initial setup, from cloning the repository to deploying your world.
+A quickstart guide to help you build and deploy your first Dojo provable game.
 
-Read the full tutorial [here](https://book.dojoengine.org/tutorial/dojo-starter).
+Read the full tutorial [here](https://dojoengine.org/tutorial/dojo-starter).
 
 ## Running Locally
 
@@ -38,17 +40,16 @@ katana --disable-fee --allowed-origins "*"
 sozo build
 
 # Migrate the example
-sozo migrate apply
+sozo migrate
 
 # Start Torii
-torii --world 0x5d475a9221f6cbf1a016b12400a01b9a89935069aecd57e9876fcb2a7bb29da --allowed-origins "*"
+# Replace <WORLD_ADDRESS> with the address of the deployed world from the previous step
+torii --world <WORLD_ADDRESS> --allowed-origins "*"
 ```
 
 ---
 
 ## Contribution
-
-This starter project is a constant work in progress and contributions are greatly appreciated!
 
 1. **Report a Bug**
 

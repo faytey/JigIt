@@ -1,30 +1,45 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
 
 import App from "./App.tsx";
 
 import "./index.css";
-
+import { init } from "@dojoengine/sdk";
+import { Schema, schema } from "./bindings.ts";
 import { dojoConfig } from "../dojoConfig.ts";
-import { DojoProvider } from "./dojo/DojoContext.tsx";
-import { setup } from "./dojo/setup.ts";
+import { DojoContextProvider } from "./DojoContext.tsx";
+import { setupBurnerManager } from "@dojoengine/create-burner";
 
-async function init() {
-    const rootElement = document.getElementById("root");
-    if (!rootElement) throw new Error("React root not found");
-    const root = ReactDOM.createRoot(rootElement as HTMLElement);
+async function main() {
+    const sdk = await init<Schema>(
+        {
+            client: {
+                rpcUrl: dojoConfig.rpcUrl,
+                toriiUrl: dojoConfig.toriiUrl,
+                relayUrl: dojoConfig.relayUrl,
+                worldAddress: dojoConfig.manifest.world.address,
+            },
+            domain: {
+                name: "WORLD_NAME",
+                version: "1.0",
+                chainId: "KATANA",
+                revision: "1",
+            },
+        },
+        schema
+    );
 
-    const setupResult = await setup(dojoConfig);
-
-    !setupResult && <div>Loading....</div>;
-
-    root.render(
-        <React.StrictMode>
-            <DojoProvider value={setupResult}>
-                <App />
-            </DojoProvider>
-        </React.StrictMode>
+    createRoot(document.getElementById("root")!).render(
+        <StrictMode>
+            <DojoContextProvider
+                burnerManager={await setupBurnerManager(dojoConfig)}
+            >
+                <App sdk={sdk} />
+            </DojoContextProvider>
+        </StrictMode>
     );
 }
 
-init();
+main().catch((error) => {
+    console.error("Failed to initialize the application:", error);
+});

@@ -1,26 +1,7 @@
 {
-    "compilerOptions": {
-        "target": "ES2020",
-        "useDefineForClassFields": true,
-        "lib": ["ES2020", "DOM", "DOM.Iterable"],
-        "module": "ESNext",
-        "skipLibCheck": true,
-        "moduleResolution": "node",
-        "allowImportingTsExtensions": true,
-        "resolveJsonModule": true,
-        "isolatedModules": true,
-        "noEmit": true,
-        "jsx": "react-jsx",
-        "strict": true,
-        // "noUnusedLocals": true,
-        // "noUnusedParameters": true,
-        "noFallthroughCasesInSwitch": true,
-        "allowSyntheticDefaultImports": true
-    },
-    "include": ["src", "dojoConfig.ts"],
+    "files": [],
     "references": [
-        {
-            "path": "./tsconfig.node.json"
-        }
+        { "path": "./tsconfig.app.json" },
+        { "path": "./tsconfig.node.json" }
     ]
 }

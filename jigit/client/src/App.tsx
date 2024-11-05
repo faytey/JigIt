@@ -1,187 +1,314 @@
-import "./App.css";
-
-import { useEffect, useState } from "react";
-import { useComponentValue, useQuerySync } from "@dojoengine/react";
-import { Entity } from "@dojoengine/recs";
+import { useEffect, useMemo } from "react";
+import { SDK, createDojoStore } from "@dojoengine/sdk";
 import { getEntityIdFromKeys } from "@dojoengine/utils";
+import { addAddressPadding } from "starknet";
 
-import { Direction } from "./dojo/typescript/models.gen";
-import { useDojo } from "./dojo/useDojo";
+import { Models, Schema } from "./bindings.ts";
+import { useDojo } from "./useDojo.tsx";
+import useModel from "./useModel.tsx";
+import { useSystemCalls } from "./useSystemCalls.ts";
 
-enum DirectionEnum {
-  None = "0",
-  Left = "Left",
-  Right = "Right",
-  Up = "Up",
-  Down = "Down",
-}
+export const useDojoStore = createDojoStore<Schema>();
 
-function App() {
-  const {
-    setup: {
-      systemCalls: { spawn, move },
-      clientComponents: { Position, Moves, DirectionsAvailable, Moved },
-      toriiClient,
-      contractComponents,
-    },
-    account,
-  } = useDojo();
+function App({ sdk }: { sdk: SDK<Schema> }) {
+    const {
+        account,
+        setup: { client },
+    } = useDojo();
+    const state = useDojoStore((state) => state);
+    const entities = useDojoStore((state) => state.entities);
 
-  useQuerySync(toriiClient, contractComponents as any, []);
+    const { spawn } = useSystemCalls();
 
-  const [clipboardStatus, setClipboardStatus] = useState({
-    message: "",
-    isError: false,
-  });
+    const entityId = useMemo(
+        () => getEntityIdFromKeys([BigInt(account?.account.address)]),
+        [account?.account.address]
+    );
 
-  // entity id we are syncing
-  const entityId = getEntityIdFromKeys([
-    BigInt(account?.account.address),
-  ]) as Entity;
+    useEffect(() => {
+        let unsubscribe: (() => void) | undefined;
 
-  // get current component values
-  const position = useComponentValue(Position, entityId);
-  const moves = useComponentValue(Moves, entityId);
-  const directions = useComponentValue(DirectionsAvailable, entityId);
+        const subscribe = async () => {
+            const subscription = await sdk.subscribeEntityQuery(
+                {
+                    dojo_starter: {
+                        Moves: {
+                            $: {
+                                where: {
+                                    player: {
+                                        $is: addAddressPadding(
+                                            account.account.address
+                                        ),
+                                    },
+                                },
+                            },
+                        },
+                        Position: {
+                            $: {
+                                where: {
+                                    player: {
+                                        $is: addAddressPadding(
+                                            account.account.address
+                                        ),
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                (response) => {
+                    if (response.error) {
+                        console.error(
+                            "Error setting up entity sync:",
+                            response.error
+                        );
+                    } else if (
+                        response.data &&
+                        response.data[0].entityId !== "0x0"
+                    ) {
+                        console.log("subscribed", response.data[0]);
+                        state.updateEntity(response.data[0]);
+                    }
+                },
+                { logging: true }
+            );
 
-  const moved = useComponentValue(Moved, entityId);
+            unsubscribe = () => subscription.cancel();
+        };
 
-  console.log("moved", moved);
+        subscribe();
 
-  const handleRestoreBurners = async () => {
-    try {
-      await account?.applyFromClipboard();
-      setClipboardStatus({
-        message: "Burners restored successfully!",
-        isError: false,
-      });
-    } catch (error) {
-      setClipboardStatus({
-        message: `Failed to restore burners from clipboard`,
-        isError: true,
-      });
-    }
-  };
+        return () => {
+            if (unsubscribe) {
+                unsubscribe();
+            }
+        };
+    }, [sdk, account?.account.address]);
 
-  useEffect(() => {
-    if (clipboardStatus.message) {
-      const timer = setTimeout(() => {
-        setClipboardStatus({ message: "", isError: false });
-      }, 3000);
+    useEffect(() => {
+        const fetchEntities = async () => {
+            try {
+                await sdk.getEntities(
+                    {
+                        dojo_starter: {
+                            Moves: {
+                                $: {
+                                    where: {
+                                        player: {
+                                            $eq: addAddressPadding(
+                                                account.account.address
+                                            ),
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    (resp) => {
+                        if (resp.error) {
+                            console.error(
+                                "resp.error.message:",
+                                resp.error.message
+                            );
+                            return;
+                        }
+                        if (resp.data) {
+                            state.setEntities(resp.data);
+                        }
+                    }
+                );
+            } catch (error) {
+                console.error("Error querying entities:", error);
+            }
+        };
 
-      return () => clearTimeout(timer);
-    }
-  }, [clipboardStatus.message]);
+        fetchEntities();
+    }, [sdk, account?.account.address]);
 
-  return (
-    <>
-      <button onClick={() => account?.create()}>
-        {account?.isDeploying ? "deploying burner" : "create burner"}
-      </button>
-      {account && account?.list().length > 0 && (
-        <button onClick={async () => await account?.copyToClipboard()}>
-          Save Burners to Clipboard
-        </button>
-      )}
-      <button onClick={handleRestoreBurners}>
-        Restore Burners from Clipboard
-      </button>
-      {clipboardStatus.message && (
-        <div className={clipboardStatus.isError ? "error" : "success"}>
-          {clipboardStatus.message}
-        </div>
-      )}
+    const moves = useModel(entityId, Models.Moves);
+    const position = useModel(entityId, Models.Position);
 
-      <div className="card">
-        <div>{`burners deployed: ${account.count}`}</div>
-        <div>
-          select signer:{" "}
-          <select
-            value={account ? account.account.address : ""}
-            onChange={(e) => account.select(e.target.value)}
-          >
-            {account?.list().map((account, index) => {
-              return (
-                <option value={account.address} key={index}>
-                  {account.address}
-                </option>
-              );
-            })}
-          </select>
-        </div>
-        <div>
-          <button onClick={() => account.clear()}>Clear burners</button>
-          <p>
-            You will need to Authorise the contracts before you can use a
-            burner. See readme.
-          </p>
-        </div>
-      </div>
+    return (
+        <div className="bg-black min-h-screen w-full p-4 sm:p-8">
+            <div className="max-w-7xl mx-auto">
+                <button
+                    className="mb-4 px-4 py-2 bg-blue-600 text-white text-sm sm:text-base rounded-md hover:bg-blue-700 transition-colors duration-300"
+                    onClick={() => account?.create()}
+                >
+                    {account?.isDeploying
+                        ? "Deploying Burner..."
+                        : "Create Burner"}
+                </button>
 
-      <div className="card">
-        <button onClick={() => spawn(account.account)}>Spawn</button>
-        <div>Moves Left: {moves ? `${moves.remaining}` : "Need to Spawn"}</div>
-        <div>
-          Position:{" "}
-          {position
-            ? `${position?.vec.x}, ${position?.vec.y}`
-            : "Need to Spawn"}
-        </div>
+                <div className="bg-gray-800 shadow-md rounded-lg p-4 sm:p-6 mb-6 w-full max-w-md">
+                    <div className="text-lg sm:text-xl font-semibold mb-4 text-white">{`Burners Deployed: ${account.count}`}</div>
+                    <div className="mb-4">
+                        <label
+                            htmlFor="signer-select"
+                            className="block text-sm font-medium text-gray-300 mb-2"
+                        >
+                            Select Signer:
+                        </label>
+                        <select
+                            id="signer-select"
+                            className="w-full px-3 py-2 text-base text-gray-200 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            value={account ? account.account.address : ""}
+                            onChange={(e) => account.select(e.target.value)}
+                        >
+                            {account?.list().map((account, index) => (
+                                <option value={account.address} key={index}>
+                                    {account.address}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <button
+                        className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 text-base rounded transition duration-300 ease-in-out"
+                        onClick={() => account.clear()}
+                    >
+                        Clear Burners
+                    </button>
+                </div>
 
-        <div>{moves && moves.last_direction}</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+                    <div className="bg-gray-700 p-4 rounded-lg shadow-inner">
+                        <div className="grid grid-cols-3 gap-2 w-full h-48">
+                            <div className="col-start-2">
+                                <button
+                                    className="h-12 w-12 bg-gray-600 rounded-full shadow-md active:shadow-inner active:bg-gray-500 focus:outline-none text-2xl font-bold text-gray-200"
+                                    onClick={async () => await spawn()}
+                                >
+                                    +
+                                </button>
+                            </div>
+                            <div className="col-span-3 text-center text-base text-white">
+                                Moves Left:{" "}
+                                {moves ? `${moves.remaining}` : "Need to Spawn"}
+                            </div>
+                            <div className="col-span-3 text-center text-base text-white">
+                                {position
+                                    ? `x: ${position?.vec?.x}, y: ${position?.vec?.y}`
+                                    : "Need to Spawn"}
+                            </div>
+                            <div className="col-span-3 text-center text-base text-white">
+                                {moves && moves.last_direction}
+                            </div>
+                        </div>
+                    </div>
 
-        <div>
-          <div>Available Positions</div>
-          {directions?.directions.map((a: any, index: any) => (
-            <div key={index} className="">
-              {a}
+                    <div className="bg-gray-700 p-4 rounded-lg shadow-inner">
+                        <div className="grid grid-cols-3 gap-2 w-full h-48">
+                            {[
+                                {
+                                    direction: "Up" as const,
+                                    label: "↑",
+                                    col: "col-start-2",
+                                },
+                                {
+                                    direction: "Left" as const,
+                                    label: "←",
+                                    col: "col-start-1",
+                                },
+                                {
+                                    direction: "Right" as const,
+                                    label: "→",
+                                    col: "col-start-3",
+                                },
+                                {
+                                    direction: "Down" as const,
+                                    label: "↓",
+                                    col: "col-start-2",
+                                },
+                            ].map(({ direction, label, col }) => (
+                                <button
+                                    className={`${col} h-12 w-12 bg-gray-600 rounded-full shadow-md active:shadow-inner active:bg-gray-500 focus:outline-none text-2xl font-bold text-gray-200`}
+                                    key={direction}
+                                    onClick={async () => {
+                                        await client.actions.move({
+                                            account: account.account,
+                                            direction: { type: direction },
+                                        });
+                                    }}
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-8 overflow-x-auto">
+                    <table className="w-full border-collapse border border-gray-700">
+                        <thead>
+                            <tr className="bg-gray-800 text-white">
+                                <th className="border border-gray-700 p-2">
+                                    Entity ID
+                                </th>
+                                <th className="border border-gray-700 p-2">
+                                    Player
+                                </th>
+                                <th className="border border-gray-700 p-2">
+                                    Position X
+                                </th>
+                                <th className="border border-gray-700 p-2">
+                                    Position Y
+                                </th>
+                                <th className="border border-gray-700 p-2">
+                                    Can Move
+                                </th>
+                                <th className="border border-gray-700 p-2">
+                                    Last Direction
+                                </th>
+                                <th className="border border-gray-700 p-2">
+                                    Remaining Moves
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {Object.entries(entities).map(
+                                ([entityId, entity]) => {
+                                    const position =
+                                        entity.models.dojo_starter.Position;
+                                    const moves =
+                                        entity.models.dojo_starter.Moves;
+
+                                    return (
+                                        <tr
+                                            key={entityId}
+                                            className="text-gray-300"
+                                        >
+                                            <td className="border border-gray-700 p-2">
+                                                {entityId}
+                                            </td>
+                                            <td className="border border-gray-700 p-2">
+                                                {position?.player ?? "N/A"}
+                                            </td>
+                                            <td className="border border-gray-700 p-2">
+                                                {position?.vec?.x ?? "N/A"}
+                                            </td>
+                                            <td className="border border-gray-700 p-2">
+                                                {position?.vec?.y ?? "N/A"}
+                                            </td>
+                                            <td className="border border-gray-700 p-2">
+                                                {moves?.can_move?.toString() ??
+                                                    "N/A"}
+                                            </td>
+                                            <td className="border border-gray-700 p-2">
+                                                {moves?.last_direction ?? "N/A"}
+                                            </td>
+                                            <td className="border border-gray-700 p-2">
+                                                {moves?.remaining ?? "N/A"}
+                                            </td>
+                                        </tr>
+                                    );
+                                }
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-          ))}
         </div>
-      </div>
-
-      <div className="card">
-        <div>
-          <button
-            onClick={() =>
-              position && position.vec.y > 0
-                ? move(account.account, {
-                    type: DirectionEnum.Up,
-                  })
-                : console.log("Reach the borders of the world.")
-            }
-          >
-            Move Up
-          </button>
-        </div>
-        <div>
-          <button
-            onClick={() =>
-              position && position.vec.x > 0
-                ? move(account.account, {
-                    type: DirectionEnum.Left,
-                  })
-                : console.log("Reach the borders of the world.")
-            }
-          >
-            Move Left
-          </button>
-          <button
-            onClick={() => move(account.account, { type: DirectionEnum.Right })}
-          >
-            Move Right
-          </button>
-        </div>
-        <div>
-          <button
-            onClick={() => move(account.account, { type: DirectionEnum.Down })}
-          >
-            Move Down
-          </button>
-        </div>
-      </div>
-    </>
-  );
+    );
 }
 
 export default App;
