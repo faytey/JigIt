@@ -1,4 +1,4 @@
-use dojo_starter::models::{Direction, Position};
+use dojo_starter::models::index::{Direction, Position};
 
 // define the interface
 #[starknet::interface]
@@ -12,7 +12,7 @@ trait IActions<T> {
 pub mod actions {
     use super::{IActions, Direction, Position, next_position};
     use starknet::{ContractAddress, get_caller_address};
-    use dojo_starter::models::{Vec2, Moves, DirectionsAvailable};
+    use dojo_starter::models::index::{Vec2, Moves, DirectionsAvailable};
 
     use dojo::model::{ModelStorage, ModelValueStorage};
     use dojo::event::EventStorage;
