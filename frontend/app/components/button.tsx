@@ -1,10 +1,12 @@
 export function Button({
   children,
   text,
+  onClick,
   ...props
 }: {
   text: string;
   children?: any;
+  onClick?: any
 }) {
   return (
     <button

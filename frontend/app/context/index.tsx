@@ -37,7 +37,7 @@ export const WalletProvider = ({
         modalMode: "neverAsk",
       });
       if (connection && connection.isConnected) {
-        setConnection(connection);
+        setConnection(connection as any);
         setAccount(connection.account);
         setAddress(connection.selectedAddress);
       }
@@ -51,7 +51,7 @@ export const WalletProvider = ({
     const connection = await connect({ modalMode: "canAsk" });
     // await connection?.enable({ starknetVersion: "v4" });
     if (connection && connection.isConnected) {
-      setConnection(connection);
+      setConnection(connection as any);
       setAccount(connection.account);
 
       const cleanedAddress = padAddress(connection.selectedAddress);
