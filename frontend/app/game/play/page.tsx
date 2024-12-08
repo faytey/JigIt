@@ -29,7 +29,7 @@ function DemoJigsaw(props: {
   const puzzleRef = useRef(null);
 
   useEffect(() => {
-    const puzzle = puzzleRef.current;
+    const puzzle: any = puzzleRef.current;
     // @ts-ignore
     // define audio source
     // let audio = new Audio("../../../../assets/audio/joinPuzzle.wav");
@@ -40,7 +40,7 @@ function DemoJigsaw(props: {
     let puzzleImage = new Image();
     puzzleImage.src = defaultImage;
     puzzleImage.onload = () => {
-      const canvas = new headbreaker.Canvas(puzzle.id, {
+      const canvas = new headbreaker.Canvas(puzzle?.id, {
         width: props.width,
         height: props.height,
         pieceSize: props.pieceSize,
@@ -70,7 +70,7 @@ function DemoJigsaw(props: {
 
       canvas.draw();
 
-      canvas.onConnect((_piece, figure, _target, targetFigure) => {
+      canvas.onConnect((_piece: any, figure: { shape: { stroke: (arg0: string) => void; strokeWidth: (arg0: number) => void; }; }, _target: any, targetFigure: { shape: { stroke: (arg0: string) => void; strokeWidth: (arg0: number) => void; }; }) => {
         // play sound
         audio.play();
 
