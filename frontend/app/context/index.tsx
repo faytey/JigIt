@@ -33,7 +33,7 @@ export const WalletProvider = ({
 
   useEffect(() => {
     const starknetConnect = async () => {
-      const connection = await connect({
+      const connection: any = await connect({
         modalMode: "neverAsk",
       });
       if (connection && connection.isConnected) {
@@ -48,7 +48,7 @@ export const WalletProvider = ({
   console.log("address: ", address);
 
   const connectWallet = async () => {
-    const connection = await connect({ modalMode: "canAsk" });
+    const connection: any = await connect({ modalMode: "canAsk" });
     // await connection?.enable({ starknetVersion: "v4" });
     if (connection && connection.isConnected) {
       setConnection(connection);

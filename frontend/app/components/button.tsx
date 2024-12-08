@@ -5,6 +5,7 @@ export function Button({
 }: {
   text: string;
   children?: any;
+  onClick?: any;
 }) {
   return (
     <button
