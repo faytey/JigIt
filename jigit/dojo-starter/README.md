@@ -62,4 +62,7 @@ torii --world <WORLD_ADDRESS> --allowed-origins "*"
 3. **Create a Pull Request**
     - It can't get better then this, your pull request will be appreciated by the community.
 
+4. **Contribution Guidelines**
+    - For detailed contribution guidelines, please refer to the [CONTRIBUTING.md](../CONTRIBUTING.md) file.
+
 Happy coding!
