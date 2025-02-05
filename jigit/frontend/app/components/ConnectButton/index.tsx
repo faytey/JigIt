@@ -1,31 +1,38 @@
+import { useState } from "react";
 import { useJigitContext } from "@/app/context";
 import { Button } from "../button";
+import { connect } from "get-starknet";
 
 function ConnectButton() {
   const { connection, connectWallet, disconnectWallet } = useJigitContext();
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  const handleWalletSelect = async () => {
+    try {
+      setIsConnecting(true);
+      await connectWallet();
+    } catch (error) {
+      console.error("Error connecting wallet:", error);
+    } finally {
+      setIsConnecting(false);
+    }
+  };
 
   return (
-    <section>
+    <section className="relative">
       {connection ? (
-        // <button
-        //   type="button"
-        //   className="border rounded-lg shadow-md border-black bg-white text-purple-950 py-2 px-4 mb-2"
-        //   onClick={disconnectWallet}
-        // >
-        //   Disconnect
-        // </button>
-        <Button text="Disconnect" onClick={disconnectWallet} />
+        <Button 
+          text="Disconnect" 
+          onClick={disconnectWallet}
+        />
       ) : (
-        // <button
-        //   type="button"
-        //   className="border rounded-lg shadow-md border-black bg-white text-purple-950 py-2 px-4 mb-2"
-        //   onClick={connectWallet}
-        // >
-        //   Connect Wallet
-        // </button>
-        <Button text="Connect Wallet" onClick={connectWallet} />
+        <Button 
+          text={isConnecting ? "Connecting..." : "Connect Wallet"} 
+          onClick={handleWalletSelect}
+        />
       )}
     </section>
   );
 }
+
 export default ConnectButton;
